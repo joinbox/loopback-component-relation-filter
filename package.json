@@ -1,5 +1,5 @@
 {
-  "name": "loopback-relation-filter",
+  "name": "loopback-component-relation-filter",
   "version": "0.1.0",
   "description": "Enables where query filters over related models via loopback api.",
   "main": "index.js",
@@ -30,7 +30,7 @@
     "query"
   ],
   "author": "Michael Rüfenacht",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/joinbox/loopback-relation-filter/issues"
   },
