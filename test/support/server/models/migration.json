@@ -1,0 +1,32 @@
+{
+    "name"        : "Migration",
+    "plural"      : "migrations",
+    "base"        : "PersistedModel",
+    "idInjection" : true,
+    "strict"      : true,
+    "options"     : {
+        "validateUpsert" : true
+    },
+    "properties"  : {
+        "started"    : {
+            "type" : "date",
+            "required" : "true"
+        },
+        "identifier" : {
+            "type" : "string"
+        },
+        "succeeded" : {
+            "type" : "date"
+        },
+        "failed": {
+            "type" : "date"
+        },
+        "data"       : {
+            "type" : "json"
+        }
+    },
+    "validations" : [],
+    "relations"   : {},
+    "acls"        : [],
+    "methods"     : {}
+}

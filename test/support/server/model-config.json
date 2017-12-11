@@ -1,0 +1,29 @@
+{
+    "_meta": {
+        "sources": [
+            "loopback/common/models",
+            "loopback/server/models",
+            "./models"
+        ],
+        "mixins": [
+            "loopback/common/mixins",
+            "loopback/server/mixins"
+        ]
+    },
+    "Book": {
+        "dataSource": "db",
+        "enableSearch": true,
+        "rejectUnknownProperties": true
+    },
+    "Page": {
+        "dataSource": "db"
+    },
+    "Author": {
+        "dataSource": "db",
+        "enableSearch": true,
+        "rejectUnknownProperties": true
+    },
+    "Publisher": {
+        "dataSource": "db"
+    }
+}

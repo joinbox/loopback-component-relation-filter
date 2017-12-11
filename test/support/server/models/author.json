@@ -1,0 +1,30 @@
+{
+  "name": "Author",
+  "plural": "authors",
+  "base": "PersistedModel",
+  "idInjection": true,
+  "search": {
+    "enabled": true,
+    "rejectUnknownProperties": true
+  },
+  "options": {
+    "validateUpsert": true
+  },
+  "properties": {
+    "firstName": {
+      "type": "string"
+    },
+    "lastName": {
+      "type": "string"
+    }
+  },
+  "validations": [],
+  "relations": {
+    "books": {
+      "type": "hasAndBelongsToMany",
+      "model": "Book"
+    }
+  },
+  "acls": [],
+  "methods": {}
+}
