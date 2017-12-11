@@ -19,7 +19,6 @@ const { UnknownPropertyError } = require('./src/error');
  * @param models
  * @returns {Function}
  */
-
 function extendedFindQuery(model, models, { rejectUnknownProperties = false } = {}) {
     return function(ctx, unused, next) {
 
@@ -30,7 +29,8 @@ function extendedFindQuery(model, models, { rejectUnknownProperties = false } = 
             return next();
         }
 
-        const rejectUnknown = getSearchSettings(model).rejectUnknownProperties || rejectUnknownProperties;
+        const rejectUnknown = getSearchSettings(model).rejectUnknownProperties
+            || rejectUnknownProperties;
         const builder = new SearchQueryBuilder(models, { rejectUnknownProperties: rejectUnknown });
         const originalWhere = ctx.args.filter.where;
         const query = Object.assign({}, originalWhere);
@@ -48,6 +48,7 @@ function extendedFindQuery(model, models, { rejectUnknownProperties = false } = 
                 };
 
                 if (query[idProperty]) {
+                    // @todo: this does not make too much sense, add test and fix it!
                     const and = originalWhere.and || [];
                     and.push({ [idProperty]: query[idProperty] });
                     and.push({ [idProperty]: whereIn });
