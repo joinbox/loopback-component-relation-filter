@@ -1,7 +1,34 @@
 # loopback-relation-filter
 Enables where query filters on related loopback models.
 
-## testing
+## Configuration
+
+Enable/disable extended searching for all models in your `component-config`:
+
+```Json
+{
+    "loopback-component-relation-filter": {
+        "enabled": true,
+        "rejectUnknownProperties": true
+    }
+}
+
+```
+
+Enable/disable searching in a specific model config:
+
+```Json
+{
+    "relationFilter": {
+        "enabled": true,
+        "rejectUnknownProperties": true
+    }
+}
+```
+
+If `rejectUnknownProperties` is set to true the component throws an error during the normalization.
+
+## Testing
 
 Check the `package.json` to see how to execute tests:
 

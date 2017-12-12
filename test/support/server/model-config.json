@@ -12,16 +12,19 @@
     },
     "Book": {
         "dataSource": "db",
-        "enableSearch": true,
-        "rejectUnknownProperties": true
+        "search": {
+            "enabled": true,
+            "rejectUnknownProperties": false
+        }
     },
     "Page": {
         "dataSource": "db"
     },
     "Author": {
         "dataSource": "db",
-        "enableSearch": true,
-        "rejectUnknownProperties": true
+        "search": {
+            "enabled": true
+        }
     },
     "Publisher": {
         "dataSource": "db"

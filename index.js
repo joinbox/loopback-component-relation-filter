@@ -22,17 +22,12 @@ const { UnknownPropertyError } = require('./src/error');
 function extendedFindQuery(model, models, { rejectUnknownProperties = false } = {}) {
     return function(ctx, unused, next) {
 
-        if (!ctx
-            || !ctx.args
-            || !ctx.args.filter
-            || !ctx.args.filter.where) {
+        const originalWhere = getWhereFilter(ctx);
+        if (!originalWhere) {
             return next();
         }
 
-        const rejectUnknown = getSearchSettings(model).rejectUnknownProperties
-            || rejectUnknownProperties;
-        const builder = new SearchQueryBuilder(models, { rejectUnknownProperties: rejectUnknown });
-        const originalWhere = ctx.args.filter.where;
+        const builder = new SearchQueryBuilder(models, { rejectUnknownProperties });
         const query = Object.assign({}, originalWhere);
 
         try {
@@ -67,22 +62,29 @@ function extendedFindQuery(model, models, { rejectUnknownProperties = false } = 
     };
 }
 
-function getSearchSettings(model) {
-    return model.definition.settings.search || {};
+function getWhereFilter(context = {}) {
+    const args = context.args;
+    const filter = args ? args.filter : null;
+    return filter ? filter.where : null;
 }
 
-module.exports = function(loopbackApp, options) {
+function getSearchSettings(model, componentSettings = {}) {
+    const modelSettings = model.definition.settings.relationFilter || {};
+    return Object.assign({}, componentSettings, modelSettings);
+}
+
+module.exports = function(loopbackApp, settings) {
 
     Object
         .keys(loopbackApp.models)
         .forEach((modelName) => {
 
             const model = loopbackApp.models[modelName];
-            const searchConfig = getSearchSettings(model);
+            const searchConfig = getSearchSettings(model, settings);
 
             if (searchConfig.enabled === true) {
-                model.beforeRemote('find', extendedFindQuery(model, loopbackApp.models, options));
-                model.beforeRemote('findOne', extendedFindQuery(model, loopbackApp.models, options));
+                model.beforeRemote('find', extendedFindQuery(model, loopbackApp.models, searchConfig));
+                model.beforeRemote('findOne', extendedFindQuery(model, loopbackApp.models, searchConfig));
             }
         });
 };

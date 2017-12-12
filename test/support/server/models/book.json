@@ -7,9 +7,9 @@
   "options": {
     "validateUpsert": true
   },
-  "search": {
+  "relationFilter": {
     "enabled": true,
-    "rejectUnknownProperties": true
+    "rejectUnknownProperties": false
   },
   "properties": {
     "title": {

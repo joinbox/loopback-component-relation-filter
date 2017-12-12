@@ -3,12 +3,11 @@
   "plural": "authors",
   "base": "PersistedModel",
   "idInjection": true,
-  "search": {
-    "enabled": true,
-    "rejectUnknownProperties": true
-  },
   "options": {
     "validateUpsert": true
+  },
+  "relationFilter": {
+    "enabled": true
   },
   "properties": {
     "firstName": {

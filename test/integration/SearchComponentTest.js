@@ -43,14 +43,14 @@ describe('The loopback-search-component', () => {
     });
 
     it('the component creates a corresponding error for unknown properties ' +
-        '(if configured accordingly)', async function() {
+        '(if configured accordingly, as in our component-config)', async function() {
 
         const query = {
             where: {
                 test: 'unknown',
             },
         };
-        // this will usually return 5 books
+
         try {
             const response = await (this.apiClient.get('/authors')
                 .set('accept', 'application/json')
@@ -61,5 +61,20 @@ describe('The loopback-search-component', () => {
             return;
         }
         throw new Error('Querying property "test" on "/authors" did not fail as expected.');
+    });
+
+    it('the error behavior for unknown properties can be configured on a per model base ' +
+        '(as in our book.json where we override rejectUnknownProperties)', async function() {
+
+        const query = {
+            where: {
+                unknown: 'test',
+            },
+        };
+        // otherwise this test would fail
+        await (this.apiClient.get('/books')
+            .set('accept', 'application/json')
+            .query({ filter: JSON.stringify(query) })
+            .then(result => result.body));
     });
 });
