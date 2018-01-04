@@ -4,19 +4,34 @@ const SearchQueryBuilder = require('./src/SearchQueryBuilder');
 const { UnknownPropertyError } = require('./src/error');
 
 /**
- * Creates the remote hook.
+ * Loopback component that allows filtering over related models using the where filter.
+ */
+module.exports = function(loopbackApp, settings) {
+
+    Object
+        .values(loopbackApp.models)
+        .forEach((model) => {
+
+            const searchConfig = getSearchSettings(model, settings);
+
+            if (searchConfig.enabled === true) {
+                model.beforeRemote('find', extendedFindQuery(model, loopbackApp.models, searchConfig));
+                model.beforeRemote('findOne', extendedFindQuery(model, loopbackApp.models, searchConfig));
+            }
+
+        });
+};
+
+// Export the component specific error classes.
+module.exports.error = error;
+
+/**
+ * Creates the function which is invoked for the 'find' and 'findOne' remote hook of loopback.
  *
- * @todo:   add a configuration scheme that makes sense
- * @todo:   do a check first if the query tries to access relations to avoid the additional db query
- * @todo:   check if we could add a caching strategy for the sql generation
- *          we could use the model and the stringified query as a key, invalidation would not be a problem
- * @todo:   check if we could add a caching strategy for the query results (this is hard in terms of invalidation)
- * @todo:   check how to properly ensure that the corresponding data source supports searching
- *          (i.e. add config on datasource level)
- * @todo:   create meaningful error messages (on startup, and at run-time)
+ * For more information on remote hooks see https://loopback.io/doc/en/lb3/Remote-hooks.html
  *
- * @param model
- * @param models
+ * @param model a loopback model
+ * @param models the loopback models object
  * @returns {Function}
  */
 function extendedFindQuery(model, models, { rejectUnknownProperties = false } = {}) {
@@ -55,39 +70,34 @@ function extendedFindQuery(model, models, { rejectUnknownProperties = false } = 
             });
         } catch (err) {
             if (err instanceof UnknownPropertyError) {
-                err.status = 409;
+                err.status = 400;
             }
             next(err);
         }
     };
 }
 
+/**
+ * Returns the filter query (either sent via API or remote method invocation).
+ *
+ * @param context the loopback request context
+ * @returns {null}
+ */
 function getWhereFilter(context = {}) {
     const args = context.args;
     const filter = args ? args.filter : null;
     return filter ? filter.where : null;
 }
 
+/**
+ * Gets the relationFilter settings from the models configuration (setting) and merges
+ * them with the basic component settings.
+ *
+ * @param model a loopback model
+ * @param componentSettings general settings of the component
+ * @returns {*}
+ */
 function getSearchSettings(model, componentSettings = {}) {
     const modelSettings = model.definition.settings.relationFilter || {};
     return Object.assign({}, componentSettings, modelSettings);
 }
-
-module.exports = function(loopbackApp, settings) {
-
-    Object
-        .keys(loopbackApp.models)
-        .forEach((modelName) => {
-
-            const model = loopbackApp.models[modelName];
-            const searchConfig = getSearchSettings(model, settings);
-
-            if (searchConfig.enabled === true) {
-                model.beforeRemote('find', extendedFindQuery(model, loopbackApp.models, searchConfig));
-                model.beforeRemote('findOne', extendedFindQuery(model, loopbackApp.models, searchConfig));
-            }
-        });
-};
-
-
-module.exports.error = error;

@@ -57,7 +57,7 @@ describe('The loopback-search-component', () => {
                 .query({ filter: JSON.stringify(query) })
                 .then(result => result.body));
         } catch (err) {
-            expect(err).to.have.property('status', 409);
+            expect(err).to.have.property('status', 400);
             return;
         }
         throw new Error('Querying property "test" on "/authors" did not fail as expected.');
