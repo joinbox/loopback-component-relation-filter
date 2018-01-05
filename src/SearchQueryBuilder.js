@@ -81,46 +81,48 @@ module.exports = class SearchQueryBuilder {
         return Object.keys(relations).map(name => relations[name]);
     }
 
-    handleQueryCollection(model, queries, builder, aliasedRelationModels, isAnd = true) {
+    handleQueryCollection(model, queries, builder, aliasedRelationModels, isOr = false) {
         queries.forEach((query) => {
             Object
                 .keys(query)
                 .forEach((property) => {
+                    // we need to restore the query builder after each property, eek!
+                    const queryBuilder = isOr ? builder.or : builder;
                     if (model.isProperty(property)) {
                         const propertyFilter = {
                             property: model.getColumnName(property),
                             value: query[property],
                         };
-                        this.applyPropertyFilter(propertyFilter, builder, isAnd);
+                        this.applyPropertyFilter(propertyFilter, queryBuilder);
                     } else if (model.isRelation(property)) {
                         const targetModel = aliasedRelationModels[property];
-                        this.queryRelationsAndProperties(builder, targetModel, query[property]);
+                        this.queryRelationsAndProperties(queryBuilder, targetModel, query[property]);
                     } else if (property === 'or') {
-                        this.handleOrQueries(model, query.or, builder, aliasedRelationModels);
+                        this.handleOrQueries(model, query.or, queryBuilder, aliasedRelationModels);
                     } else if (property === 'and') {
-                        this.handleAndQueries(model, query.and, builder, aliasedRelationModels);
+                        this.handleAndQueries(model, query.and, queryBuilder, aliasedRelationModels);
                     }
                 });
         });
     }
 
     handleAndQueries(model, andQueries, builder, aliasedRelationModels) {
-        const rootBuilder = this;
-        builder.andWhere(function() {
-            const subQueryBuilder = this;
-            rootBuilder.handleQueryCollection(model, andQueries, subQueryBuilder, aliasedRelationModels);
+        // we do not know when the callback is executed, so we might not be able to track the aliases
+        // properly?
+        builder.andWhere((subQueryBuilder) => {
+            this.handleQueryCollection(model, andQueries, subQueryBuilder, aliasedRelationModels);
         });
     }
 
     handleOrQueries(model, orQueries, builder, aliasedRelationModels) {
-        const rootBuilder = this;
-        builder.orWhere(function() {
-            const subQueryBuilder = this;
-            rootBuilder.handleQueryCollection(model, orQueries, subQueryBuilder, aliasedRelationModels, false);
+        // we do not know when the callback is executed, so we might not be able to track the aliases
+        // properly?
+        builder.orWhere((subQueryBuilder) => {
+            this.handleQueryCollection(model, orQueries, subQueryBuilder.or, aliasedRelationModels, true);
         });
     }
 
-    applyPropertyFilter({ property, value }, builder, isAnd = true) {
+    applyPropertyFilter({ property, value }, builder) {
 
         if (!value) return;
         const operatorMap = {
@@ -135,40 +137,34 @@ module.exports = class SearchQueryBuilder {
             nilike: 'not ilike',
 
         };
-        const operator = this.supportedOperators.find(op => value.hasOwnProperty(op));
+        const operator = this.supportedOperators.find((op) => {
+            return Object.prototype.hasOwnProperty.call(value, op);
+        });
+
         if (operator) {
             const content = value[operator];
             switch (operator) {
-            case '=':
-                return isAnd
-                    ? builder.where(property, content)
-                    : builder.orWhere(property, content);
-            case 'neq':
-            case 'gt':
-            case 'lt':
-            case 'gte':
-            case 'lte':
-            case 'like':
-            case 'ilike':
-            case 'nlike':
-            case 'nilike':
-                const mappedOperator = operatorMap[operator];
-                return isAnd
-                    ? builder.where(property, mappedOperator, content)
-                    : builder.orWhere(property, mappedOperator, content);
-            case 'between':
-                return isAnd
-                    ? builder.whereBetween(property, content)
-                    : builder.orWhereBetween(property, content);
-            case 'inq':
-                return isAnd
-                    ? builder.whereIn(property, content)
-                    : builder.orWhereIn(property, content);
-            case 'nin':
-                return isAnd
-                    ? builder.whereNotIn(property, content)
-                    : builder.orWhereNotIn(property, content);
-            default:
+                case '=':
+                    return builder.where(property, content);
+                case 'neq':
+                case 'gt':
+                case 'lt':
+                case 'gte':
+                case 'lte':
+                case 'like':
+                case 'ilike':
+                case 'nlike':
+                case 'nilike': {
+                    const mappedOperator = operatorMap[operator];
+                    return builder.where(property, mappedOperator, content)
+                }
+                case 'between':
+                    return builder.whereBetween(property, content);
+                case 'inq':
+                    return builder.whereIn(property, content);
+                case 'nin':
+                    return builder.whereNotIn(property, content);
+                default:
             }
         }
         // @todo: throw an error? silently ignore it?

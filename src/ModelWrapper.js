@@ -92,11 +92,9 @@ module.exports = class ModelWrapper {
     }
 
     getIdProperties(options = {}) {
-        const properties = this.getModelProperties();
-        const ids = Object
-            .keys(properties)
-            .filter(propertyName => !!properties[propertyName].id);
-
+        // return the ids as an array for backwards compatibility
+        const idName = this.model.getIdName();
+        const ids = [idName];
         if (options.ignoreAlias === true) {
             return ids;
         }

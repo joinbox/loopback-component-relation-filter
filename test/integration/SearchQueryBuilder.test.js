@@ -135,7 +135,44 @@ describe('The Search Query Builder', function(){
                         inner join "public"."author" as "book_authors" on "book_authorbook_authors"."authorid" = "book_authors"."id"
                     where (("book_authors"."firstname" like 'Michael'))
                     group by "book"."id"`,
-        }
+        },
+        {
+            message: 'properly respects simple or clauses',
+            where: {
+                or: [
+                    {
+                        title: 'Animal Farm',
+                    },
+                    {
+                        title: '1984',
+                    },
+                ],
+            },
+            result: `select "book"."id" from "public"."book" as "book" 
+                        where ("book"."title" = 'Animal Farm' or "book"."title" = '1984') 
+                    group by "book"."id"`,
+        },
+        {
+            message: 'properly respects or clauses',
+            where: {
+                or: [
+                    {
+                        title: 'Animal Farm',
+                    },
+                    {
+                        authors: {
+                            firstName: 'Scott',
+                        },
+                    },
+                ],
+            },
+            result: `select "book"."id" from "public"."book" as "book"
+                        inner join "public"."authorbook" as "book_authorbook_authors" on "book"."id" = "book_authorbook_authors"."bookid"
+                        inner join "public"."author" as "book_authors" on "book_authorbook_authors"."authorid" = "book_authors"."id"
+                    where ("book"."title" = 'Animal Farm' 
+                        or ("book_authors"."firstname" = 'Scott')) 
+                    group by "book"."id"`,
+        },
     ];
 
     runCases(cases, this);

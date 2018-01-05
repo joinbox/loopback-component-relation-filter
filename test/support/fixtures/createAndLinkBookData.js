@@ -46,7 +46,13 @@ class BookDataCreator {
         orwell.books.add(bookMap['1984']);
         orwell.books.add(bookMap['Animal Farm']);
 
-        return orwell.save();
+        const fitzgerald = authorMap.Fitzgerald;
+        fitzgerald.books.add(bookMap['The great gatsby']);
+
+        return Promise.all([
+            orwell.save(),
+            fitzgerald.save(),
+        ]);
     }
 
     mapEntities(entities, property){

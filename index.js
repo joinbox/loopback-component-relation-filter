@@ -39,40 +39,39 @@ function extendedFindQuery(model, models, { rejectUnknownProperties = false } = 
 
         const originalWhere = getWhereFilter(ctx);
         if (!originalWhere) {
-            return next();
-        }
+            next();
+        } else {
+            const builder = new SearchQueryBuilder(models, { rejectUnknownProperties });
+            const query = Object.assign({}, originalWhere);
 
-        const builder = new SearchQueryBuilder(models, { rejectUnknownProperties });
-        const query = Object.assign({}, originalWhere);
+            try {
+                const idName = model.getIdName();
+                const databaseQuery = builder.buildQuery(model.modelName, { where: query });
+                const sqlString = databaseQuery.toString();
 
-        try {
-            const databaseQuery = builder.buildQuery(model.modelName, { where: query });
-            model.dataSource.connector.execute(databaseQuery.toString(), (err, result) => {
-                if (err) {
-                    return next(err);
+                model.dataSource.connector.execute(sqlString, (err, result) => {
+                    if (err) {
+                        next(err);
+                    } else if (!result || result.length === 0) {
+                        // no results match our query, prevent loopback from returning a result
+                        ctx.args.filter.where = {[idName]: false};
+                        next();
+                    } else {
+                        const resultIds = result.map(entry => entry[idName]);
+                        // Removed the check for an existing id query, since the result of the
+                        // database query should include the corresponding id already!
+                        // Therefore we remove all the other constrains since they could lead to
+                        // contradicting statements!
+                        ctx.args.filter.where = {[idName]: { inq: resultIds }};
+                        next();
+                    }
+                });
+            } catch (err) {
+                if (err instanceof UnknownPropertyError) {
+                    err.status = 400;
                 }
-                const [first] = result;
-                const [idProperty] = Object.keys(first);
-                const whereIn = {
-                    inq: result.map(entry => entry[idProperty]),
-                };
-
-                if (query[idProperty]) {
-                    // @todo: this does not make too much sense, add test and fix it!
-                    const and = originalWhere.and || [];
-                    and.push({ [idProperty]: query[idProperty] });
-                    and.push({ [idProperty]: whereIn });
-                } else {
-                    originalWhere[idProperty] = whereIn;
-                }
-
-                next();
-            });
-        } catch (err) {
-            if (err instanceof UnknownPropertyError) {
-                err.status = 400;
+                next(err);
             }
-            next(err);
         }
     };
 }
