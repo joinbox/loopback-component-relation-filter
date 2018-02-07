@@ -79,7 +79,7 @@ module.exports = class SearchQueryBuilder {
                 });
             });
 
-        return Object.keys(relations).map(name => relations[name]);
+        return Object.values(relations);
     }
 
     handleQueryCollection(model, queries, builder, aliasedRelationModels, isOr = false) {

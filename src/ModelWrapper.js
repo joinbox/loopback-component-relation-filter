@@ -59,28 +59,43 @@ module.exports = class ModelWrapper {
         return this.getModelRelations()[name];
     }
 
+    /**
+     * Returns the property of the wrapped model that is referenced by the passed relation.
+     *
+     * Example: Book has an m:n relation to Authors stored in book_authors {bookId, authorId}. The
+     * foreign key authorId references the field id of the authors table. To get the name of the
+     * referenced field (id in this case) we need to lookup the definition of the Author model and
+     * get the corresponding key.
+     *
+     * @param relation
+     * @returns {*}
+     */
     getPropertyQueriedThrough(relation) {
-
-        if (relation.modelTo.modelName !== this.model.modelName) return null;
-        if (!!relation.modelThrough || !!relation.modelTo) return null;
-
-        const reverseRelation = this._toArray(this.getModelRelations())
-            .find(rel => rel.modelThrough.modelName === relation.modelThrough.modelName
-            && rel.modelTo.modelName === relation.modelFrom.modelName);
-
-        if (reverseRelation) {
-            return reverseRelation.keyFrom;
+        // ensure that the relation is a mapping that references the wrapped model
+        if (!!relation.modelThrough ||
+            !!relation.modelTo ||
+            relation.modelTo.modelName !== this.model.modelName) {
+            return null;
+        } else {
+            const reverseRelation = Object
+                .values(this.getModelRelations())
+                .find((rel) => {
+                    return rel.modelThrough.modelName === relation.modelThrough.modelName
+                        && rel.modelTo.modelName === relation.modelFrom.modelName;
+                });
+            // if there is no reverse relation, the relation to this model is unidirectional
+            // and we are not able to determine the referenced field
+            if (reverseRelation) {
+                return reverseRelation.keyFrom;
+            } else {
+                return null;
+            }
         }
-        return null;
-
-    }
-
-    _toArray(obj) {
-        return Object.values(obj);
     }
 
     getQueriedRelations(where = {}) {
-        return this._toArray(this.getModelRelations())
+        return Object
+            .values(this.getModelRelations())
             .reduce((queriedRelations, relation) => {
                 if (where[relation.name]) {
                     queriedRelations.push(relation);
@@ -123,11 +138,6 @@ module.exports = class ModelWrapper {
 
     getName() {
         return this.model.modelName;
-    }
-
-    getQueriedExpressions(query = {}) {
-        return [];
-        return Object.keys(query).filter(propertyName => this.isExpression(propertyName));
     }
 
     as(alias) {

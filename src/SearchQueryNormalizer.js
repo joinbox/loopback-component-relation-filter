@@ -51,19 +51,19 @@ module.exports = class SearchQueryNormalizer {
         Object
             .keys(where)
             .forEach((property) => {
-            const query = where[property];
+                const query = where[property];
 
-        if (property === 'and') {
-            normalizedAnd.push(...query);
-        } else if (property === 'or') {
-            normalizedOr.push(...query);
-        } else if (this.isValidProperty(rootModel, property)) {
-            // this also includes or queries
-            normalizedAnd.push({ [property]: query });
-        } else {
-            this.handleInvalidProperty(rootModel, property, where);
-        }
-    });
+                if (property === 'and') {
+                    normalizedAnd.push(...query);
+                } else if (property === 'or') {
+                    normalizedOr.push(...query);
+                } else if (this.isValidProperty(rootModel, property)) {
+                    // this also includes or queries
+                    normalizedAnd.push({ [property]: query });
+                } else {
+                    this.handleInvalidProperty(rootModel, property, where);
+                }
+            });
 
         const result = {};
         if (normalizedAnd.length) {
@@ -94,30 +94,30 @@ module.exports = class SearchQueryNormalizer {
     normalizeQueryCollection(model, queryCollection) {
         return queryCollection.reduce((queries, query) => {
             Object
-            .keys(query)
-            .forEach((property) => {
-            if (model.isProperty(property)) {
-            queries.push(this.normalizeProperty(model, property, query[property]));
-        }
-        if (model.isRelation(property)) {
-            const targetModel = model.getRelation(property).modelTo;
-            queries.push({
-                [property]: this.normalizeQuery(targetModel.modelName, query[property]),
-            });
-        }
-        if (property === 'and') {
-            queries.push({
-                and: this.normalizeQueryCollection(model, query.and),
-            });
-        }
-        if (property === 'or') {
-            queries.push({
-                or: this.normalizeQueryCollection(model, query.or),
-            });
-        }
-    });
-        return queries;
-    }, []);
+                .keys(query)
+                .forEach((property) => {
+                    if (model.isProperty(property)) {
+                        queries.push(this.normalizeProperty(model, property, query[property]));
+                    }
+                    if (model.isRelation(property)) {
+                        const targetModel = model.getRelation(property).modelTo;
+                        queries.push({
+                            [property]: this.normalizeQuery(targetModel.modelName, query[property]),
+                        });
+                    }
+                    if (property === 'and') {
+                        queries.push({
+                            and: this.normalizeQueryCollection(model, query.and),
+                        });
+                    }
+                    if (property === 'or') {
+                        queries.push({
+                            or: this.normalizeQueryCollection(model, query.or),
+                        });
+                    }
+                });
+            return queries;
+        }, []);
     }
 
     normalizeProperty(rootModel, property, query) {
