@@ -6,6 +6,10 @@
   "options": {
     "validateUpsert": true
   },
+  "relationFilter": {
+    "enabled": true,
+    "preserveColumnCase": true
+  },
   "properties": {
     "number": {
       "type": "number",

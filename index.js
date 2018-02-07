@@ -15,8 +15,7 @@ module.exports = function(loopbackApp, settings) {
             const searchConfig = getSearchSettings(model, settings);
 
             if (searchConfig.enabled === true) {
-                model.beforeRemote('find', extendedFindQuery(model, loopbackApp.models, searchConfig));
-                model.beforeRemote('findOne', extendedFindQuery(model, loopbackApp.models, searchConfig));
+                model.observe('access', extendedFindQuery(model, loopbackApp.models, searchConfig));
             }
 
         });
@@ -34,14 +33,13 @@ module.exports.error = error;
  * @param models the loopback models object
  * @returns {Function}
  */
-function extendedFindQuery(model, models, { rejectUnknownProperties = false } = {}) {
-    return function(ctx, unused, next) {
-
+function extendedFindQuery(model, models, { rejectUnknownProperties = false, preserveColumnCase = true } = {}) {
+    return function(ctx, next) {
         const originalWhere = getWhereFilter(ctx);
         if (!originalWhere) {
             next();
         } else {
-            const builder = new SearchQueryBuilder(models, { rejectUnknownProperties });
+            const builder = new SearchQueryBuilder(models, { rejectUnknownProperties, preserveColumnCase });
             const query = Object.assign({}, originalWhere);
 
             try {
@@ -54,7 +52,9 @@ function extendedFindQuery(model, models, { rejectUnknownProperties = false } = 
                         next(err);
                     } else if (!result || result.length === 0) {
                         // no results match our query, prevent loopback from returning a result
-                        ctx.args.filter.where = {[idName]: false};
+                        // setting it to false would cause loopback to throw an error because
+                        // it is no integer
+                        ctx.query.where = {[idName]: -1};
                         next();
                     } else {
                         const resultIds = result.map(entry => entry[idName]);
@@ -62,7 +62,7 @@ function extendedFindQuery(model, models, { rejectUnknownProperties = false } = 
                         // database query should include the corresponding id already!
                         // Therefore we remove all the other constrains since they could lead to
                         // contradicting statements!
-                        ctx.args.filter.where = {[idName]: { inq: resultIds }};
+                        ctx.query.where = {[idName]: { inq: resultIds }};
                         next();
                     }
                 });
@@ -83,9 +83,8 @@ function extendedFindQuery(model, models, { rejectUnknownProperties = false } = 
  * @returns {null}
  */
 function getWhereFilter(context = {}) {
-    const args = context.args;
-    const filter = args ? args.filter : null;
-    return filter ? filter.where : null;
+    const query = context.query || {};
+    return query.where;
 }
 
 /**

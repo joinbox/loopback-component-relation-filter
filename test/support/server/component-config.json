@@ -1,5 +1,6 @@
 {
     "../../../index": {
-        "rejectUnknownProperties": true
+        "rejectUnknownProperties": true,
+        "preserveColumnCase": false
     }
 }
