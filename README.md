@@ -9,7 +9,8 @@ Enable/disable extended searching for all models in your `component-config`:
 {
     "loopback-component-relation-filter": {
         "enabled": true,
-        "rejectUnknownProperties": true
+        "rejectUnknownProperties": true,
+        "preserveColumnCase": true
     }
 }
 
@@ -21,12 +22,26 @@ Enable/disable searching in a specific model config:
 {
     "relationFilter": {
         "enabled": true,
-        "rejectUnknownProperties": true
+        "rejectUnknownProperties": true,
+        "preserveColumnCase": false
     }
 }
 ```
 
-If `rejectUnknownProperties` is set to true the component throws an error during the normalization.
+### RejectUnknownProperties
+
+If `rejectUnknownProperties` (default is `true`) is set to `false` the component will not throw an error during the 
+normalization if the queried property/relation does not exist on the queried model. 
+One can use this configuration value to ensure that legacy queries still work properly and do not 
+fail.
+
+### PreserveColumnCase
+
+If `preserveColumnCase` is set to false, column names are converted to lowercase when building the 
+query. This option allows the user to make the filtering work with older, auto generated models 
+(i.e. using `automigrate/-update`) where the column names were lowercased (e.g. property `startDate` 
+will be converted to a column `startdate`). 
+
 
 ## Testing
 
