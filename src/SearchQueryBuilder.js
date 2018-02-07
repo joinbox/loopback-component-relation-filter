@@ -13,8 +13,9 @@ const SearchQueryNormalizer = require('./SearchQueryNormalizer');
 
 module.exports = class SearchQueryBuilder {
 
-    constructor(models, { rejectUnknownProperties = false } = {}) {
+    constructor(models, { rejectUnknownProperties = false, preserveColumnCase = true } = {}) {
         this.models = models;
+        this.preserveColumnCase = preserveColumnCase;
         this._supportedClients = {
             postgresql: 'pg',
         };
@@ -88,9 +89,10 @@ module.exports = class SearchQueryBuilder {
                 .forEach((property) => {
                     // we need to restore the query builder after each property, eek!
                     const queryBuilder = isOr ? builder.or : builder;
+                    const preserveCase = this.preserveColumnCase;
                     if (model.isProperty(property)) {
                         const propertyFilter = {
-                            property: model.getColumnName(property),
+                            property: model.getColumnName(property, {preserveCase}),
                             value: query[property],
                         };
                         this.applyPropertyFilter(propertyFilter, queryBuilder);
@@ -208,7 +210,7 @@ module.exports = class SearchQueryBuilder {
 
     createRootQuery(builder, rootModel, filter = {}) {
 
-        const [id] = rootModel.getIdProperties();
+        const [id] = rootModel.getIdProperties({preserveCase: this.preserveColumnCase});
         const tableName = rootModel.getAliasedTable();
 
         const basicSelect = builder(tableName).select(id).groupBy(id);
@@ -221,8 +223,12 @@ module.exports = class SearchQueryBuilder {
     }
 
     joinEntities({ keyFrom, keyTo }, fromQuery, toQuery, builder) {
-        const fromKey = fromQuery.getColumnName(keyFrom);
-        const toKey = toQuery.getColumnName(keyTo);
+        const fromKey = fromQuery.getColumnName(keyFrom, {preserveCase: this.preserveColumnCase});
+        const toKey = toQuery.getColumnName(keyTo, {preserveCase: this.preserveColumnCase});
+
+        if(keyFrom.toLowerCase() === 'publisherid'){
+            fromKey;
+        }
 
         builder.join(toQuery.getAliasedTable(), { [fromKey]: toKey });
     }

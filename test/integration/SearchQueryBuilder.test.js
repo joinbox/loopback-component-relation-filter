@@ -2,10 +2,13 @@ const { expect } = require('chai');
 
 const SearchQueryBuilder = require('../../src/SearchQueryBuilder');
 
-describe('The Search Query Builder', function(){
+describe('The SearchQueryBuilder', function(){
 
     beforeEach('setup query builder', function(){
-        this.builder = new SearchQueryBuilder(this.models);
+        // set the preserveColumnCase option to false, since the postgres connector seems to
+        // do weird conversions now and then
+        // @see: https://github.com/strongloop/loopback-connector-postgresql/issues/38
+        this.builder = new SearchQueryBuilder(this.models, {preserveColumnCase: false});
     });
 
     const cases = [
