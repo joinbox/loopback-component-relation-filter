@@ -1,6 +1,6 @@
 module.exports = class ModelWrapper {
 
-    constructor(model, alias) {
+    constructor(model, alias = null) {
         this.model = model;
         this.connector = this.wrapConnector(model);
         this.alias = alias;
@@ -33,10 +33,10 @@ module.exports = class ModelWrapper {
         return `${this.getFullyQualifiedTable()}${alias}`;
     }
 
-    getColumnName(key, options = {}) {
-        const tableName = options.alias || this.alias || this.getTable();
-        // the to lower case is a problem of loopbacks generators
-        return `${tableName}.${key.toLowerCase()}`;
+    getColumnName(key, { alias = this.alias, preserveCase = true } = {}) {
+        const tableName = alias || this.getTable();
+        const columnName = preserveCase ? key : key.toLowerCase();
+        return `${tableName}.${columnName}`;
     }
 
     getModelName() {
@@ -76,9 +76,7 @@ module.exports = class ModelWrapper {
     }
 
     _toArray(obj) {
-        return Object
-            .keys(obj)
-            .map(key => obj[key]);
+        return Object.values(obj);
     }
 
     getQueriedRelations(where = {}) {
@@ -113,12 +111,12 @@ module.exports = class ModelWrapper {
         return Object.prototype.hasOwnProperty.call(this.getModelRelations(), propertyName);
     }
 
-    getQueriedProperties(query = {}) {
+    getQueriedProperties(query = {}, options={}) {
         return Object
             .keys(query)
             .filter(propertyName => this.isProperty(propertyName))
             .map(propertyName => ({
-                key: this.getColumnName(propertyName),
+                key: this.getColumnName(propertyName, options),
                 value: query[propertyName],
             }));
     }
