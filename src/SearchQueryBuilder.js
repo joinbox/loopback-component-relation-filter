@@ -4,6 +4,8 @@ const ModelWrapper = require('./ModelWrapper');
 const TableAliasProvider = require('./TableAliasProvider');
 const SearchQueryNormalizer = require('./SearchQueryNormalizer');
 
+const { UnknownOperatorError }= require('./error');
+
 /**
  * @todo: remove the state by instantiating a new table alias provider
  * @todo: remove all methods that should not belong to the interface (i.e. only preserve buildQuery or build)
@@ -19,7 +21,6 @@ module.exports = class SearchQueryBuilder {
         this._supportedClients = {
             postgresql: 'pg',
         };
-        this.aliases = new TableAliasProvider();
         this.supportedOperators = [
             '=',
             'neq',
@@ -52,78 +53,203 @@ module.exports = class SearchQueryBuilder {
         return this._supportedClients[connectorName];
     }
 
-    // this is currently too complex, since the normalized where will only contain an and query
-    queryRelationsAndProperties(builder, rootModel, where = {}) {
+    queryRelationsAndProperties(builder, rootModel, aliasProvider, query) {
 
-        const andQueries = where.and || [];
-        const orQueries = where.or || [];
+        const joinAliasProvider = aliasProvider.spawnProvider();
+        const filterAliasProvider = aliasProvider.spawnProvider();
+        // 1. iterate the query and collect all joins
+        const joins = this.getAllJoins(rootModel, query, joinAliasProvider);
+        joins.forEach(({ table, keyFrom, keyTo }) => {
+            builder.join(table, { [keyFrom]: keyTo });
+        });
+        // 2. iterate the query and apply all filters (we need to keep track of the aliases the
+        // same way we did before in the joins).
+        return this.applyFilters(builder, rootModel, query, filterAliasProvider);
+    }
 
-        const relationsToJoin = this.getAllQueriedRelations(rootModel, andQueries, orQueries);
-        const aliasedRelations = this.applyJoins(rootModel, relationsToJoin, builder);
+    applyFilters(builder, rootModel, { and = [], or = [] }, aliasProvider) {
+        // Store the relations encountered on the current level to prevent the builder from
+        // joining the same table multiple times.
+        const relations = {};
+        // Iterate depth-first and create all aliases!
+        builder.andWhere((subBuilder) => {
+            const options = { preserveCase: this.preserveColumnCase, isOr: false };
+            this._handleFilters(and, subBuilder.and, rootModel, aliasProvider, relations, options);
+        });
 
-        this.handleAndQueries(rootModel, andQueries, builder, aliasedRelations);
-        this.handleOrQueries(rootModel, orQueries, builder, aliasedRelations);
+        builder.orWhere((subBuilder) => {
+            const options = { preserveCase: this.preserveColumnCase, isOr: true };
+            this._handleFilters(or, subBuilder.or, rootModel, aliasProvider, relations, options);
+        });
 
         return builder;
     }
 
-    getAllQueriedRelations(model, andQueries = [], orQueries = []) {
-        const relations = {};
+    _handleFilters(filters, builder, rootModel, aliasProvider, relations, opts) {
+        this._forEachQuery(filters, (propertyName, query) => {
+            // Since we proceed the filters recursively (depth-first) we need to restore the state
+            // of the query builder every time we enter a new branch.
+            const subQueryBuilder = opts.isOr ? builder.or : builder.and;
+            if (rootModel.isRelation(propertyName)) {
+                const { modelTo } = this._trackAliases(
+                    rootModel,
+                    propertyName,
+                    aliasProvider,
+                    relations,
+                    opts,
+                );
+                this.applyFilters(subQueryBuilder, modelTo, query, aliasProvider);
+            }
+            if (rootModel.isProperty(propertyName)) {
+                const propertyFilter = {
+                    property: rootModel.getColumnName(propertyName, opts),
+                    value: query,
+                };
+                this.applyPropertyFilter(propertyFilter, subQueryBuilder);
+            }
+        });
+    }
 
-        andQueries
-            .concat(orQueries)
-            .forEach((query) => {
-                const modelRelations = model.getQueriedRelations(query);
-                modelRelations.forEach((relation) => {
-                    relations[relation.name] = relation;
-                });
+    _forEachQuery(collection, callback) {
+        collection.forEach((query) => {
+            Object.keys(query).forEach((propertyName) => {
+                callback(propertyName, query[propertyName]);
             });
-
-        return Object.values(relations);
-    }
-
-    handleQueryCollection(model, queries, builder, aliasedRelationModels, isOr = false) {
-        queries.forEach((query) => {
-            Object
-                .keys(query)
-                .forEach((property) => {
-                    // we need to restore the query builder after each property, eek!
-                    const queryBuilder = isOr ? builder.or : builder;
-                    const preserveCase = this.preserveColumnCase;
-                    if (model.isProperty(property)) {
-                        const propertyFilter = {
-                            property: model.getColumnName(property, {preserveCase}),
-                            value: query[property],
-                        };
-                        this.applyPropertyFilter(propertyFilter, queryBuilder);
-                    } else if (model.isRelation(property)) {
-                        const targetModel = aliasedRelationModels[property];
-                        this.queryRelationsAndProperties(queryBuilder, targetModel, query[property]);
-                    } else if (property === 'or') {
-                        this.handleOrQueries(model, query.or, queryBuilder, aliasedRelationModels);
-                    } else if (property === 'and') {
-                        this.handleAndQueries(model, query.and, queryBuilder, aliasedRelationModels);
-                    }
-                });
         });
     }
 
-    handleAndQueries(model, andQueries, builder, aliasedRelationModels) {
-        // we do not know when the callback is executed, so we might not be able to track the aliases
-        // properly?
-        builder.andWhere((subQueryBuilder) => {
-            this.handleQueryCollection(model, andQueries, subQueryBuilder, aliasedRelationModels);
-        });
+    _trackAliases(rootModel, relationName, aliasProvider, seenRelations, options = {}) {
+
+        const previousResult = seenRelations[relationName];
+
+        if (previousResult) {
+            return previousResult;
+        }
+
+        const relation = rootModel.getRelation(relationName);
+        const throughModel = relation.modelThrough;
+
+        const modelToAlias = this.createAlias(aliasProvider, rootModel.getName(), relation);
+        const modelTo = ModelWrapper.fromModel(relation.modelTo, modelToAlias);
+        const table = modelTo.getAliasedTable();
+        const keyFrom = rootModel.getColumnName(relation.keyFrom, options);
+
+        const aliases = {
+            keyFrom,
+            modelTo,
+            relation,
+            table,
+        };
+
+        if (throughModel) {
+            const throughAlias = this.createAlias(
+                aliasProvider,
+                rootModel.getName(),
+                relation,
+                true,
+            );
+            aliases.modelThrough = ModelWrapper.fromModel(throughModel, throughAlias);
+        }
+
+        seenRelations[relationName] = aliases;
+
+        return aliases;
     }
 
-    handleOrQueries(model, orQueries, builder, aliasedRelationModels) {
-        // we do not know when the callback is executed, so we might not be able to track the aliases
-        // properly?
-        builder.orWhere((subQueryBuilder) => {
-            this.handleQueryCollection(model, orQueries, subQueryBuilder.or, aliasedRelationModels, true);
+    /**
+     * Iterates over the normalized query and collects all necessary joins by creating according
+     * aliases.
+     *
+     * @param rootModel
+     * @param and
+     * @param or
+     * @param aliasProvider
+     * @return {*}
+     */
+    getAllJoins(rootModel, { and = [], or = [] }, aliasProvider) {
+        const filters = and.concat(or);
+        const children = [];
+        const relations = {};
+        const joins = [];
+        const opts = { preserveCase: this.preserveColumnCase };
+
+        this._forEachQuery(filters, (propertyName, query) => {
+            // The result found for the join (gathered by _trackAliases) is stored on the
+            // relations object.
+            if (rootModel.isRelation(propertyName) && !relations[propertyName]) {
+                // alias the model we are going to join
+                const aliases  = this._trackAliases(
+                    rootModel,
+                    propertyName,
+                    aliasProvider,
+                    relations,
+                    opts,
+                );
+                // store the children of the current level for breadth-first traversal
+                children.push({ model: aliases.modelTo, query });
+                // its kind of a reference (not a mapping)
+                if (!aliases.modelThrough) {
+                    joins.push(this._joinReference(aliases, opts));
+                } else {
+                    joins.push(...this._joinMapping(aliases, opts));
+                }
+            }
         });
+        // append all joins of the lower levels
+        return children.reduce((allJoins, { model, query }) => {
+            const lowerJoins = this.getAllJoins(model, query, aliasProvider);
+            allJoins.push(...lowerJoins);
+            return allJoins;
+        }, joins.slice(0));
     }
 
+    _joinMapping({keyFrom, modelTo, modelThrough, relation, table}, opts){
+        // get the id of the target model
+        const [targetModelId] = modelTo.getIdProperties({
+            ignoreAlias: true,
+            preserveCase: this.preserveColumnCase,
+        });
+        // do a reverse lookup of the current relation and try to find out the
+        // referenced property of the target model
+        const relationTargetProperty = modelTo.getPropertyQueriedThrough(relation);
+        // first join is for the mapping table, the second one joins the target
+        // model's table
+        const targetKey = relationTargetProperty || targetModelId;
+        return [
+            {
+                table: modelThrough.getAliasedTable(),
+                keyFrom,
+                keyTo: modelThrough.getColumnName(relation.keyTo, opts),
+            },
+            {
+                table,
+                keyFrom: modelThrough.getColumnName(relation.keyThrough, opts),
+                keyTo: modelTo.getColumnName(targetKey, opts),
+            },
+        ];
+    }
+
+    _joinReference({keyFrom, modelTo, relation, table}, opts){
+        const keyTo = modelTo.getColumnName(relation.keyTo, opts);
+        return {
+            table,
+            keyFrom,
+            keyTo,
+        };
+    }
+
+    /**
+     * Appends a where filter to the query passed by builder.
+     *
+     * @param   {property, value} Whereas property is the fully resolved name of the property
+     *          and value the value to compare. The value should be an object of the form
+     *          {operator: comparedValue}. The method will map operator to a valid postgres
+     *          comparison operator and create a where statement of the form
+     *          `property operator comparedValue`
+     * @param {KnexQueryBuilder} the knex query builder
+     *
+     * @return {KnexQueryBuilder} the knex query builder
+     */
     applyPropertyFilter({ property, value }, builder) {
 
         if (!value) return;
@@ -139,78 +265,56 @@ module.exports = class SearchQueryBuilder {
             nilike: 'not ilike',
 
         };
-        const operator = this.supportedOperators.find((op) => {
+        const operator = this.supportedOperators.find(op => {
             return Object.prototype.hasOwnProperty.call(value, op);
         });
-
+        // The default case should never be used due to the normalization.
         if (operator) {
             const content = value[operator];
             switch (operator) {
-                case '=':
-                    return builder.where(property, content);
-                case 'neq':
-                case 'gt':
-                case 'lt':
-                case 'gte':
-                case 'lte':
-                case 'like':
-                case 'ilike':
-                case 'nlike':
-                case 'nilike': {
-                    const mappedOperator = operatorMap[operator];
-                    return builder.where(property, mappedOperator, content)
-                }
-                case 'between':
-                    return builder.whereBetween(property, content);
-                case 'inq':
-                    return builder.whereIn(property, content);
-                case 'nin':
-                    return builder.whereNotIn(property, content);
-                default:
+            case '=':
+                return builder.where(property, content);
+            case 'neq':
+            case 'gt':
+            case 'lt':
+            case 'gte':
+            case 'lte':
+            case 'like':
+            case 'ilike':
+            case 'nlike':
+            case 'nilike': {
+                const mappedOperator = operatorMap[operator];
+                return builder.where(property, mappedOperator, content);
+            }
+            case 'between':
+                return builder.whereBetween(property, content);
+            case 'inq':
+                return builder.whereIn(property, content);
+            case 'nin':
+                return builder.whereNotIn(property, content);
+            default:
+                const valueString = JSON.stringify(value);
+                const msg = `Unknown operator encountered when comparing ${property} to ${valueString}`;
+                throw new UnknownOperatorError(msg);
             }
         }
-        // @todo: throw an error? silently ignore it?
+        return builder;
     }
 
-    applyJoins(rootModel, relationsToJoin, builder) {
+    /**
+     * Creates the root select statement, normalizes the where query using the given normalizer
+     * and recursively invokes the query building.
+     *
+     * @param {KnexQueryBuilder} the knex builder instance
+     * @param {ModelWrapper} the wrapped model to start from
+     * @param {TableAliasProvider} the provider keeping track of the encountered tables
+     * @param {Object} the filter object from the request
+     *
+     * @return {*}
+     */
+    createRootQuery(builder, rootModel, aliasProvider, filter = {}) {
 
-        return relationsToJoin.reduce((aliasedModels, relation) => {
-
-            const throughModel = relation.modelThrough;
-            const toAlias = this.createAlias(rootModel.getName(), relation);
-            const modelToQuery = ModelWrapper.fromModel(relation.modelTo, toAlias);
-
-            aliasedModels[relation.name] = modelToQuery;
-
-            // belongs to and has many without through model work exactly the same
-            if (!throughModel) {
-            // pure has many or belongTo
-                this.joinEntities(relation, rootModel, modelToQuery, builder);
-            } else {
-            // @todo: move this into a method to reduce complexity
-                const throughAlias = this.createAlias(rootModel.getName(), relation, true);
-                const modelThroughQuery = ModelWrapper.fromModel(throughModel, throughAlias);
-
-                // two joins required: one on the through model, one on the to model
-                this.joinEntities(relation, rootModel, modelThroughQuery, builder);
-
-                const [targetModelId] = modelToQuery.getIdProperties({ ignoreAlias: true });
-                const relationTargetProperty = modelToQuery.getPropertyQueriedThrough(relation);
-
-                const virtualRelation = {
-                    keyFrom: relation.keyThrough,
-                    keyTo: relationTargetProperty || targetModelId,
-                };
-
-                this.joinEntities(virtualRelation, modelThroughQuery, modelToQuery, builder);
-            }
-            return aliasedModels;
-        }, {});
-    }
-
-    createRootQuery(builder, rootModel, filter = {}) {
-
-        const [id] = rootModel.getIdProperties({preserveCase: this.preserveColumnCase});
+        const [id] = rootModel.getIdProperties({ preserveCase: this.preserveColumnCase });
         const tableName = rootModel.getAliasedTable();
 
         const basicSelect = builder(tableName).select(id).groupBy(id);
@@ -219,21 +323,20 @@ module.exports = class SearchQueryBuilder {
         }
 
         const where = this.normalizer.normalizeQuery(rootModel.getName(), filter.where || {});
-        return this.queryRelationsAndProperties(basicSelect, rootModel, where);
+        return this.queryRelationsAndProperties(basicSelect, rootModel, aliasProvider, where);
     }
 
-    joinEntities({ keyFrom, keyTo }, fromQuery, toQuery, builder) {
-        const fromKey = fromQuery.getColumnName(keyFrom, {preserveCase: this.preserveColumnCase});
-        const toKey = toQuery.getColumnName(keyTo, {preserveCase: this.preserveColumnCase});
-
-        if(keyFrom.toLowerCase() === 'publisherid'){
-            fromKey;
-        }
-
-        builder.join(toQuery.getAliasedTable(), { [fromKey]: toKey });
-    }
-
-    createAlias(model, relation = null, forThrough = false) {
+    /**
+     * Returns an appropriate alias for a model or a relation of a model.
+     *
+     * @param {TableAliasProvider} an alias provider instance
+     * @param {String} the name of the model
+     * @param {RelationDefinition} the loopback relation definition
+     * @param {forThrough} if the alias for the through model of the relation is needed
+     *
+     * @return {String} the aliased name of the model or the model's relation
+     */
+    createAlias(aliasProvider, model, relation = null, forThrough = false) {
         const relationName = relation ? relation.name : null;
         let through;
 
@@ -242,14 +345,23 @@ module.exports = class SearchQueryBuilder {
             through = modelThrough.modelName;
         }
 
-        return this.aliases.createAlias(model, relationName, { through });
+        return aliasProvider.createAlias(model, relationName, { through });
     }
 
+    /**
+     * Creates a knex query for the given model, transforming the loopback filter into a
+     * database specific format.
+     *
+     * @param modelName
+     * @param filter
+     * @return {*}
+     */
     buildQuery(modelName, filter) {
-        const rootModelAlias = this.createAlias(modelName);
-        const rootModel = this.normalizer.getWrappedModel(modelName).as(rootModelAlias);
+        const aliasProvider = new TableAliasProvider();
+        const rootModelAlias = this.createAlias(aliasProvider, modelName);
+        const rootModel = ModelWrapper.fromModel(this.models[modelName], rootModelAlias);
         const builder = this.getQueryBuilder(rootModel);
 
-        return this.createRootQuery(builder, rootModel, filter);
+        return this.createRootQuery(builder, rootModel, aliasProvider, filter);
     }
 };

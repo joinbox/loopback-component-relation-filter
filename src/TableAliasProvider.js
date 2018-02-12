@@ -38,4 +38,14 @@ module.exports = class TableAliasProvider {
     createKey(model, relation, through = null) {
         return this.joinSegments(model, through, relation);
     }
+
+    /**
+     * Creates a new provider instance with the same state.
+     *
+     * @return {TableAliasProvider}
+     */
+    spawnProvider(){
+        const aliases = Object.assign({}, this.aliases);
+        return new TableAliasProvider(aliases, this.separator);
+    }
 };
