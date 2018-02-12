@@ -14,7 +14,7 @@ describe('The Search Query Normalizer', () => {
         this.normalizer = new SearchQueryNormalizer(this.models);
     });
 
-    it('adds the equality operator if no operator was specified', function(){
+    it('adds the equality operator if no operator was specified', function() {
         const newWhere = this.normalize('Book', {
             title: 'Halo',
         });
@@ -28,7 +28,7 @@ describe('The Search Query Normalizer', () => {
                     },
                 },
             ]);
-    })
+    });
 
     it('groups all properties and relations together to an and query and filters non existing properties', function() {
         const newWhere = this.normalize('Book', {
@@ -96,6 +96,46 @@ describe('The Search Query Normalizer', () => {
         };
         const newWhere = this.normalizer.normalizeWhereQuery(this.model, query);
         expect(newWhere).to.have.property('and').that.has.length(5);
+    });
+
+    it('recursively normalizes queries to relations', function() {
+        const newWhere = this.normalize('Author', {
+            lastName: {
+                like: 'Orw%',
+            },
+            books: {
+                publisher: {
+                    name: 'NAL',
+                },
+            },
+        });
+
+        expect(newWhere)
+            .to.have.property('and')
+            .that.deep.equals([
+                {
+                    lastName: {
+                        like: 'Orw%',
+                    },
+                },
+                {
+                    books: {
+                        and: [
+                            {
+                                publisher: {
+                                    and: [
+                                        {
+                                            name: {
+                                                '=': 'NAL',
+                                            },
+                                        },
+                                    ],
+                                },
+                            }
+                        ],
+                    },
+                },
+            ]);
     });
 
     // not sure yet if this will work with the precedence for or operators

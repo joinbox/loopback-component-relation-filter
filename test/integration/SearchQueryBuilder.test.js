@@ -176,6 +176,44 @@ describe('The SearchQueryBuilder', function(){
                         or ("book_authors"."firstname" = 'Scott')) 
                     group by "book"."id"`,
         },
+        {
+            message: 'joins multiple relations 1',
+            model: 'Author',
+            where: {
+                and: [
+                    {
+                        lastName: {
+                            like: 'Orw%',
+                        },
+                    },
+                    {
+                        books: {
+                            and: [
+                                {
+                                    publisher: {
+                                        and: [
+                                            {
+                                                name: {
+                                                    '=': 'NAL',
+                                                },
+                                            },
+                                        ],
+                                    },
+                                }
+                            ],
+                        },
+                    },
+                ]
+            },
+            result: `select "author"."id" from "public"."author" as "author" 
+                inner join "public"."authorbook" as "author_authorbook_books" 
+                    on "author"."id" = "author_authorbook_books"."authorid" 
+                inner join "public"."book" as "author_books" 
+                    on "author_authorbook_books"."bookid" = "author_books"."id" 
+                inner join "public"."publisher" as "book_publisher" 
+                    on "author_books"."publisherid" = "book_publisher"."id" 
+            where ("author"."lastname" like 'Orw%' and (("book_publisher"."name" = 'NAL'))) group by "author"."id"`,
+        },
     ];
 
     runCases(cases, this);
