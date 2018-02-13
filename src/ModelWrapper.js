@@ -67,8 +67,12 @@ module.exports = class ModelWrapper {
      * referenced field (id in this case) we need to lookup the definition of the Author model and
      * get the corresponding key.
      *
-     * @param relation
-     * @returns {*}
+     * @note: we return null in case we don't find anything so the invoking component (i.e. the
+     * QueryBuilder will be able to make its own assumtions on whitch property to query (e.g. take
+     * the id of the target model)
+     *
+     * @param relation the loopback relation definition
+     * @returns {(string|null)}
      */
     getPropertyQueriedThrough(relation) {
         // ensure that the relation is a mapping that references the wrapped model
@@ -80,6 +84,7 @@ module.exports = class ModelWrapper {
             const reverseRelation = Object
                 .values(this.getModelRelations())
                 .find((rel) => {
+                    // check if it is the same through model and if it references the correct entity
                     return rel.modelThrough.modelName === relation.modelThrough.modelName
                         && rel.modelTo.modelName === relation.modelFrom.modelName;
                 });
@@ -105,17 +110,14 @@ module.exports = class ModelWrapper {
     }
 
     getIdProperties(options = {}) {
-        // return the ids as an array for backwards compatibility
+        // return the ids as an array for backwards compatibility in case of compound ids
+        // (which - in general - is not supported by Loopback)
         const idName = this.model.getIdName();
         const ids = [idName];
         if (options.ignoreAlias === true) {
             return ids;
         }
         return ids.map(id => this.getColumnName(id, options));
-    }
-
-    isExpression(propertyName) {
-        return propertyName === 'and' || propertyName === 'or';
     }
 
     isProperty(propertyName) {

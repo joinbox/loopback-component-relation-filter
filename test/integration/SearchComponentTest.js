@@ -344,6 +344,52 @@ describe('The loopback-search-component', () => {
         expect(excludedBook).to.be.undefined;
     });
 
+    it('the component allows querying over multiple entities 1', async function() {
+
+        const query = {
+            where: {
+                author: {
+                    lasName: {
+                        like: 'Orw%',
+                    },
+                },
+                publisher: {
+                    name: 'NAL',
+                },
+            },
+            include: ['authors'],
+        };
+        // test to fix a bug if no data was found
+        const books = await this.apiClient.get('/books')
+            .query({ filter: JSON.stringify(query) })
+            .then(result => result.body);
+
+        expect(books).to.have.length(1);
+        expect(books.find(({title}) => title === 'Animal Farm')).to.be.ok;
+    });
+
+    it('the component allows querying over multiple entities 2', async function() {
+
+        const query = {
+            where: {
+                books: {
+                    publisher: {
+                        name: {
+                            ilike: 'nal',
+                        },
+                    }
+                },
+            },
+        };
+        // test to fix a bug if no data was found
+        const authors = await this.apiClient.get('/authors')
+            .query({ filter: JSON.stringify(query) })
+            .then(result => result.body);
+
+        expect(authors).to.have.length(1);
+        expect(authors[0]).to.have.property('lastName', 'Orwell');
+    });
+
     it('the component should prevent the invocation of the default remote method (find) from finding ' +
         'data (otherwise loopback would return the default result)',
         async function() {
@@ -398,6 +444,28 @@ describe('The loopback-search-component', () => {
             .set('accept', 'application/json')
             .query({ filter: JSON.stringify(query) })
             .then(result => result.body));
+    });
+
+    it('allows querying over multiple relations 1', async function() {
+
+        const query = {
+            where: {
+                lastName: {
+                    like: 'Orw%',
+                },
+                books: {
+                    publisher: {
+                        name: 'NAL',
+                    },
+                },
+            },
+        };
+        // test to fix a bug if no data was found
+        const authors = await this.apiClient.get('/authors')
+            .query({ filter: JSON.stringify(query) })
+            .then(result => result.body);
+
+        expect(authors).to.have.length(1);
     });
 
     describe('loopback-search-component configuration', function(){

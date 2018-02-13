@@ -15,5 +15,5 @@ module.exports = function(){
         {
             title: 'Animal Farm',
         },
-    ]
+    ];
 }

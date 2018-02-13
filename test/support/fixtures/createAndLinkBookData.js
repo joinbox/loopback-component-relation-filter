@@ -3,6 +3,7 @@ const publisherData = require('./publisherData');
 const authorData = require('./authorData');
 
 class BookDataCreator {
+
     constructor(models){
         this.Book = models.Book;
         this.Publisher = models.Publisher;
@@ -15,7 +16,7 @@ class BookDataCreator {
         const authors = await this.createAuthors(authorData());
         const publishers = await this.createPublishers(publisherData());
 
-        return this.linkData(books, authors, publishers);
+        return this.linkData({books, authors, publishers});
     }
 
     async createBooks(data){
@@ -36,11 +37,18 @@ class BookDataCreator {
         }));
     }
 
-    async linkData(books, authors, publishers){
+    async linkData({books, authors, publishers}){
         const authorMap = this.mapEntities(authors, 'lastName');
         const publisherMap = this.mapEntities(publishers, 'name');
         const bookMap = this.mapEntities(books, 'title');
 
+        return Promise.all([
+            this._linkAuthorData(bookMap, authorMap),
+            this._linkPublisherData(bookMap, publisherMap),
+        ]);
+    }
+
+    async _linkAuthorData(bookMap, authorMap){
         const orwell = authorMap['Orwell'];
 
         orwell.books.add(bookMap['1984']);
@@ -55,11 +63,29 @@ class BookDataCreator {
         ]);
     }
 
+    async _linkPublisherData(bookMap, publisherMap){
+        const orwell1984 = bookMap['1984'];
+        const animalFarm = bookMap['Animal Farm'];
+
+        const theGreatGatsby = bookMap['The great gatsby'];
+
+        orwell1984.publisher(publisherMap['Secker and Warburg']);
+        animalFarm.publisher(publisherMap['NAL']);
+
+        theGreatGatsby.publisher(publisherMap['Scribner']);
+
+        return Promise.all([
+            orwell1984.save(),
+            animalFarm.save(),
+            theGreatGatsby.save(),
+        ]);
+    }
+
     mapEntities(entities, property){
         return entities.reduce((map, entity) => {
             map[entity[property]] = entity;
             return map;
-        }, {})
+        }, {});
     }
 }
 

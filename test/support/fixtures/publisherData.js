@@ -10,10 +10,13 @@ module.exports = function(){
             name: 'Scholastic Inc.',
         },
         {
-            name: 'New American Library'
+            name: 'New American Library',
+        },
+        {
+            name: 'Secker and Warburg',
         },
         {
             name: 'NAL',
-        }
-    ]
+        },
+    ];
 };
