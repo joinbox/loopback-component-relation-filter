@@ -1,0 +1,51 @@
+{
+  "name": "loopback-component-relation-filter",
+  "version": "0.1.0",
+  "description": "Enables where query filters over related models via loopback api.",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "engines": {
+    "node": "^8.0.0",
+    "npm": "^5.0.0"
+  },
+  "scripts": {
+    "lint": "node_modules/.bin/eslint .",
+    "test:watch": "WATCH_TESTS=\"--watch\" npm run test",
+    "test:base": "mocha $NODE_DEBUG_OPTION $WATCH_TESTS --recursive --check-leaks --full-trace --exit",
+    "test:unit": "npm run test:base ./test/support/setup/unit.js ./test/unit",
+    "test:integration": "npm run test:base ./test/support/setup/integration.js ./test/integration",
+    "test": "npm run test:base ./test/support/setup/integration.js ./test/integration ./test/unit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joinbox/loopback-relation-filter.git"
+  },
+  "keywords": [
+    "loopback",
+    "relations",
+    "filter",
+    "where",
+    "query"
+  ],
+  "author": "Michael Rüfenacht",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/joinbox/loopback-relation-filter/issues"
+  },
+  "homepage": "https://github.com/joinbox/loopback-relation-filter#readme",
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "eslint": "^4.12.1",
+    "eslint-config-joinbox": "git+https://github.com/joinbox/joinbox-linter-configuration.git",
+    "loopback-connector-postgresql": "^3.2.0",
+    "mocha": "^4.0.1",
+    "npm": "^5.5.1",
+    "strong-error-handler": "^2.3.0"
+  },
+  "dependencies": {
+    "knex": "^0.14.2",
+    "loopback-microservice": "git://github.com/joinbox/loopback-microservice.git#initial-setup"
+  }
+}

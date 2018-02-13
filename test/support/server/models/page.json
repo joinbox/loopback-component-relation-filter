@@ -1,0 +1,32 @@
+{
+  "name": "Page",
+  "plural": "pages",
+  "base": "PersistedModel",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": true
+  },
+  "relationFilter": {
+    "enabled": true,
+    "preserveColumnCase": true
+  },
+  "properties": {
+    "number": {
+      "type": "number",
+      "required": true
+    },
+    "bookId": {
+      "required": true
+    }
+  },
+  "validations": [],
+  "relations": {
+    "book": {
+      "type": "belongsTo",
+      "model": "Book",
+      "foreignKey": "bookId"
+    }
+  },
+  "acls": [],
+  "methods": {}
+}

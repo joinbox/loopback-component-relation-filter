@@ -1,0 +1,45 @@
+{
+  "name": "Book",
+  "plural": "books",
+  "public": true,
+  "base": "PersistedModel",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": true
+  },
+  "relationFilter": {
+    "enabled": true,
+    "rejectUnknownProperties": false
+  },
+  "properties": {
+    "title": {
+      "type": "string",
+      "required": true
+    }
+  },
+  "validations": [],
+  "relations": {
+    "pages": {
+      "type": "hasMany",
+      "model": "Page"
+    },
+    "authors": {
+      "type": "hasAndBelongsToMany",
+      "model": "Author"
+    },
+    "coAuthors": {
+      "type": "hasAndBelongsToMany",
+      "model": "Author"
+    },
+    "mainAuthor": {
+      "type": "belongsTo",
+      "model": "Author"
+    },
+    "publisher": {
+      "type": "belongsTo",
+      "model": "Publisher"
+    }
+  },
+  "acls": [],
+  "methods": {}
+}
