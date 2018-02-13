@@ -1,6 +1,6 @@
 {
   "name": "@joinbox/loopback-component-relation-filter",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Enables where query filters over related models via loopback api.",
   "main": "index.js",
   "directories": {
