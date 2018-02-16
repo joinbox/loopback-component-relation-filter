@@ -1,6 +1,6 @@
 const path = require('path');
 
-const Microservice = require('loopback-microservice');
+const Microservice = require('@joinbox/loopback-microservice');
 
 before(async function() {
     const appRootDir = path.resolve(__dirname, '../server');

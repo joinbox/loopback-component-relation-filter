@@ -1,2 +1,2 @@
-const Microservice = require('loopback-microservice');
+const Microservice = require('@joinbox/loopback-microservice');
 module.exports = class UnknownOperatorError extends Microservice.Error {};

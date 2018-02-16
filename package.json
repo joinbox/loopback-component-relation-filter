@@ -1,6 +1,6 @@
 {
   "name": "@joinbox/loopback-component-relation-filter",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Enables where query filters over related models via loopback api.",
   "main": "index.js",
   "directories": {
@@ -46,6 +46,6 @@
   },
   "dependencies": {
     "knex": "^0.14.2",
-    "loopback-microservice": "git://github.com/joinbox/loopback-microservice.git#initial-setup"
+    "@joinbox/loopback-microservice": "^0.1.0"
   }
 }
