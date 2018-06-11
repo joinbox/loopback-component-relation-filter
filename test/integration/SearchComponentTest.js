@@ -15,7 +15,7 @@ describe('The loopback-search-component', () => {
         return createAndLinkBookData(this.models);
     });
 
-    it('the component allows filtering over related models', async function() {
+    it('allows filtering over related models', async function() {
 
         const query = {
             where: {
@@ -42,7 +42,15 @@ describe('The loopback-search-component', () => {
         expect(book2).to.be.ok;
     });
 
-    it('the component respects original id restrictions', async function() {
+    it('leaves default queries untouched', async function(){
+        const where = {};
+        const books = await this.apiClient.get('/books')
+            .query({ filter: {where}})
+            .then(({body}) => body);
+        expect(books).to.have.length(5);
+    });
+
+    it('respects original id restrictions', async function() {
 
         const title = 'Animal Farm';
         // we need to query the expected book first to get the correct id
@@ -73,7 +81,7 @@ describe('The loopback-search-component', () => {
         expect(book1).to.be.ok;
     });
 
-    it('the component respects original id restrictions in or queries', async function() {
+    it('respects original id restrictions in or queries', async function() {
 
         const title = 'Animal Farm';
         // we need to query the expected book first to get the correct id
@@ -103,7 +111,7 @@ describe('The loopback-search-component', () => {
         expect(book1).to.be.ok;
     });
 
-    it('the component respects original id restrictions with nested or queries', async function() {
+    it('respects original id restrictions with nested or queries', async function() {
 
         const title = 'Animal Farm';
         // we need to query the expected book first to get the correct id
@@ -135,7 +143,7 @@ describe('The loopback-search-component', () => {
         expect(book1).to.be.ok;
     });
 
-    it('the component should not fail if no models match the query', async function() {
+    it('should not fail if no models match the query', async function() {
 
         const query = {
             where: {
@@ -151,7 +159,7 @@ describe('The loopback-search-component', () => {
             .then(result => result.body);
     });
 
-    it('the component properly transforms between operators in or queries', async function() {
+    it('properly transforms between operators in or queries', async function() {
 
         const allBooks = await this.models.Book.find();
         const [book1, book2, book3, book4, book5] = allBooks;
@@ -180,7 +188,7 @@ describe('The loopback-search-component', () => {
         expect(excluded).to.be.undefined;
     });
 
-    it('the component properly transforms between operators in and queries', async function() {
+    it('properly transforms between operators in and queries', async function() {
 
         const allBooks = await this.models.Book.find();
         const [book1, book2, book3, book4, book5] = allBooks;
@@ -209,7 +217,7 @@ describe('The loopback-search-component', () => {
         expect(excluded).to.not.be.undefined;
     });
 
-    it('the component properly transforms in operators in and queries', async function() {
+    it('properly transforms in operators in and queries', async function() {
 
         const allBooks = await this.models.Book.find();
         const [book1, book2, book3, book4, book5] = allBooks;
@@ -237,7 +245,7 @@ describe('The loopback-search-component', () => {
         expect(books[0]).to.have.property('id', book3.id);
     });
 
-    it('the component properly transforms in operators in or queries', async function() {
+    it('properly transforms in operators in or queries', async function() {
 
         const allBooks = await this.models.Book.find();
         const [book1, book2, book3, book4, book5] = allBooks;
@@ -263,7 +271,7 @@ describe('The loopback-search-component', () => {
         expect(books).to.have.length(5);
     });
 
-    it('the component properly transforms in operators in mixed or queries', async function() {
+    it('properly transforms in operators in mixed or queries', async function() {
 
         const allBooks = await this.models.Book.find();
         const [book1, book2, book3, book4, book5] = allBooks;
@@ -287,7 +295,7 @@ describe('The loopback-search-component', () => {
         expect(books).to.have.length(5);
     });
 
-    it('the component properly transforms not in operators in and queries', async function() {
+    it('properly transforms not in operators in and queries', async function() {
 
         const allBooks = await this.models.Book.find();
         const [book1, book2, book3, book4, book5] = allBooks;
@@ -314,7 +322,7 @@ describe('The loopback-search-component', () => {
         expect(books[0]).to.have.property('id', book3.id);
     });
 
-    it('the component properly transforms not in operators in or queries', async function() {
+    it('properly transforms not in operators in or queries', async function() {
 
         const allBooks = await this.models.Book.find();
         const [book1, book2, book3, book4, book5] = allBooks;
@@ -344,7 +352,7 @@ describe('The loopback-search-component', () => {
         expect(excludedBook).to.be.undefined;
     });
 
-    it('the component allows querying over multiple entities 1', async function() {
+    it('allows querying over multiple entities 1', async function() {
 
         const query = {
             where: {
@@ -368,7 +376,7 @@ describe('The loopback-search-component', () => {
         expect(books.find(({title}) => title === 'Animal Farm')).to.be.ok;
     });
 
-    it('the component allows querying over multiple entities 2', async function() {
+    it('allows querying over multiple entities 2', async function() {
 
         const query = {
             where: {
@@ -390,7 +398,7 @@ describe('The loopback-search-component', () => {
         expect(authors[0]).to.have.property('lastName', 'Orwell');
     });
 
-    it('the component should prevent the invocation of the default remote method (find) from finding ' +
+    it('should prevent the invocation of the default remote method (find) from finding ' +
         'data (otherwise loopback would return the default result)',
         async function() {
 
@@ -410,7 +418,7 @@ describe('The loopback-search-component', () => {
             expect(books).to.have.length(0);
     });
 
-    it('the component creates a corresponding error for unknown properties ' +
+    it('creates a corresponding error for unknown properties ' +
         '(if configured accordingly, as in our component-config)', async function() {
 
         const query = {
@@ -424,11 +432,11 @@ describe('The loopback-search-component', () => {
                 .set('accept', 'application/json')
                 .query({ filter: JSON.stringify(query) })
                 .then(result => result.body));
+            const msg = 'Querying property "test" on "/authors" did not fail as expected.'
+            return Promise.reject(new Error(msg));
         } catch (err) {
             expect(err).to.have.property('status', 400);
-            return;
         }
-        throw new Error('Querying property "test" on "/authors" did not fail as expected.');
     });
 
     it('the error behavior for unknown properties can be configured on a per model base ' +
@@ -466,6 +474,46 @@ describe('The loopback-search-component', () => {
             .then(result => result.body);
 
         expect(authors).to.have.length(1);
+    });
+
+    it('creates an error if the root model is attached ' +
+        'to an unsupported datasource', async function() {
+        const query = {
+            where: {
+                dummy: true,
+            },
+        };
+        try {
+            await this.apiClient
+                      .get('/unsupported-models')
+                      .query({ filter: JSON.stringify(query) });
+            const msg = 'Request to an unsupported datasource (connector) should be rejected';
+            return Promise.reject(new Error(msg));
+        } catch (err) {
+            expect(err).to.have.property('status', 400);
+        }
+    });
+
+    it('creates an error if a related model is attached ' +
+        'to a different datasource', async function() {
+        const query = {
+            where: {
+                unsupported: {
+                    dummy: true,
+                },
+            },
+        };
+        try {
+            const { body } = await this.apiClient
+                .get('/publishers')
+                .query({ filter: JSON.stringify(query) });
+            const msg = 'Request to related models attached to a  different datasource ' +
+                '(connector) should be rejected';
+            console.log(body);
+            return Promise.reject(new Error(msg));
+        } catch (err) {
+            expect(err).to.have.property('status', 400);
+        }
     });
 
     describe('loopback-search-component configuration', function(){
