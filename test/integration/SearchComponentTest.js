@@ -42,11 +42,11 @@ describe('The loopback-search-component', () => {
         expect(book2).to.be.ok;
     });
 
-    it('leaves default queries untouched', async function(){
+    it('leaves default queries untouched', async function() {
         const where = {};
         const books = await this.apiClient.get('/books')
-            .query({ filter: {where}})
-            .then(({body}) => body);
+            .query({ filter: { where } })
+            .then(({ body }) => body);
         expect(books).to.have.length(5);
     });
 
@@ -54,7 +54,7 @@ describe('The loopback-search-component', () => {
 
         const title = 'Animal Farm';
         // we need to query the expected book first to get the correct id
-        const animalFarm = await this.models.Book.findOne({where: {title}});
+        const animalFarm = await this.models.Book.findOne({ where: { title } });
         const query = {
             where: {
                 id: animalFarm.id,
@@ -85,7 +85,7 @@ describe('The loopback-search-component', () => {
 
         const title = 'Animal Farm';
         // we need to query the expected book first to get the correct id
-        const animalFarm = await this.models.Book.findOne({where: {title}});
+        const animalFarm = await this.models.Book.findOne({ where: { title } });
         const query = {
             where: {
                 or: [
@@ -93,7 +93,7 @@ describe('The loopback-search-component', () => {
                         id: animalFarm.id,
                     },
                     {
-                       title: 'The great gatsby',
+                        title: 'The great gatsby',
                     },
                 ],
             },
@@ -101,7 +101,7 @@ describe('The loopback-search-component', () => {
         };
 
         const books = await this.apiClient.get('/books')
-            .query({filter: JSON.stringify(query)})
+            .query({ filter: JSON.stringify(query) })
             .then(result => result.body);
 
         expect(books).to.have.length(2);
@@ -115,7 +115,7 @@ describe('The loopback-search-component', () => {
 
         const title = 'Animal Farm';
         // we need to query the expected book first to get the correct id
-        const animalFarm = await this.models.Book.findOne({where: {title}});
+        const animalFarm = await this.models.Book.findOne({ where: { title } });
         const query = {
             where: {
                 or: [
@@ -133,7 +133,7 @@ describe('The loopback-search-component', () => {
         };
 
         const books = await this.apiClient.get('/books')
-            .query({filter: JSON.stringify(query)})
+            .query({ filter: JSON.stringify(query) })
             .then(result => result.body);
 
         expect(books).to.have.length(2);
@@ -168,12 +168,12 @@ describe('The loopback-search-component', () => {
             where: {
                 or: [
                     {
-                        id: { between: [book1.id, book2.id]},
+                        id: { between: [book1.id, book2.id] },
                     },
                     {
-                        id: { between: [book4.id, book5.id]},
+                        id: { between: [book4.id, book5.id] },
                     },
-                ]
+                ],
             },
             include: ['authors'],
         };
@@ -197,12 +197,12 @@ describe('The loopback-search-component', () => {
             where: {
                 and: [
                     {
-                        id: { between: [book2.id, book3.id]},
+                        id: { between: [book2.id, book3.id] },
                     },
                     {
-                        id: { between: [book3.id, book5.id]},
+                        id: { between: [book3.id, book5.id] },
                     },
-                ]
+                ],
             },
             include: ['authors'],
         };
@@ -226,12 +226,12 @@ describe('The loopback-search-component', () => {
             where: {
                 and: [
                     {
-                        id: { inq: [book1.id, book2.id, book3.id]},
+                        id: { inq: [book1.id, book2.id, book3.id] },
                     },
                     {
-                        id: { inq: [book3.id, book4.id, book5.id]},
+                        id: { inq: [book3.id, book4.id, book5.id] },
                     },
-                ]
+                ],
             },
             include: ['authors'],
         };
@@ -254,12 +254,12 @@ describe('The loopback-search-component', () => {
             where: {
                 or: [
                     {
-                        id: { inq: [book1.id, book2.id, book3.id]},
+                        id: { inq: [book1.id, book2.id, book3.id] },
                     },
                     {
-                        id: { inq: [book3.id, book4.id, book5.id]},
+                        id: { inq: [book3.id, book4.id, book5.id] },
                     },
-                ]
+                ],
             },
             include: ['authors'],
         };
@@ -278,12 +278,12 @@ describe('The loopback-search-component', () => {
 
         const query = {
             where: {
-                id: { inq: [book1.id, book2.id, book3.id]},
+                id: { inq: [book1.id, book2.id, book3.id] },
                 or: [
                     {
-                        id: { inq: [book3.id, book4.id, book5.id]},
+                        id: { inq: [book3.id, book4.id, book5.id] },
                     },
-                ]
+                ],
             },
             include: ['authors'],
         };
@@ -304,12 +304,12 @@ describe('The loopback-search-component', () => {
             where: {
                 and: [
                     {
-                        id: { nin: [book1.id, book2.id]},
+                        id: { nin: [book1.id, book2.id] },
                     },
                     {
-                        id: { nin: [book4.id, book5.id]},
+                        id: { nin: [book4.id, book5.id] },
                     },
-                ]
+                ],
             },
             include: ['authors'],
         };
@@ -331,12 +331,12 @@ describe('The loopback-search-component', () => {
             where: {
                 or: [
                     {
-                        id: { nin: [book1.id, book2.id, book3.id]},
+                        id: { nin: [book1.id, book2.id, book3.id] },
                     },
                     {
-                        id: { nin: [book3.id, book4.id, book5.id]},
+                        id: { nin: [book3.id, book4.id, book5.id] },
                     },
-                ]
+                ],
             },
             include: ['authors'],
         };
@@ -373,7 +373,7 @@ describe('The loopback-search-component', () => {
             .then(result => result.body);
 
         expect(books).to.have.length(1);
-        expect(books.find(({title}) => title === 'Animal Farm')).to.be.ok;
+        expect(books.find(({ title }) => title === 'Animal Farm')).to.be.ok;
     });
 
     it('allows querying over multiple entities 2', async function() {
@@ -385,7 +385,7 @@ describe('The loopback-search-component', () => {
                         name: {
                             ilike: 'nal',
                         },
-                    }
+                    },
                 },
             },
         };
@@ -396,9 +396,11 @@ describe('The loopback-search-component', () => {
 
         expect(authors).to.have.length(1);
         expect(authors[0]).to.have.property('lastName', 'Orwell');
+
     });
 
-    it('should prevent the invocation of the default remote method (find) from finding ' +
+    it(
+        'should prevent the invocation of the default remote method (find) from finding ' +
         'data (otherwise loopback would return the default result)',
         async function() {
 
@@ -416,7 +418,8 @@ describe('The loopback-search-component', () => {
                 .then(result => result.body);
 
             expect(books).to.have.length(0);
-    });
+        },
+    );
 
     it('creates a corresponding error for unknown properties ' +
         '(if configured accordingly, as in our component-config)', async function() {
@@ -432,7 +435,7 @@ describe('The loopback-search-component', () => {
                 .set('accept', 'application/json')
                 .query({ filter: JSON.stringify(query) })
                 .then(result => result.body));
-            const msg = 'Querying property "test" on "/authors" did not fail as expected.'
+            const msg = 'Querying property "test" on "/authors" did not fail as expected.';
             return Promise.reject(new Error(msg));
         } catch (err) {
             expect(err).to.have.property('status', 400);
@@ -485,8 +488,8 @@ describe('The loopback-search-component', () => {
         };
         try {
             await this.apiClient
-                      .get('/unsupported-models')
-                      .query({ filter: JSON.stringify(query) });
+                .get('/unsupported-models')
+                .query({ filter: JSON.stringify(query) });
             const msg = 'Request to an unsupported datasource (connector) should be rejected';
             return Promise.reject(new Error(msg));
         } catch (err) {
@@ -509,21 +512,20 @@ describe('The loopback-search-component', () => {
                 .query({ filter: JSON.stringify(query) });
             const msg = 'Request to related models attached to a  different datasource ' +
                 '(connector) should be rejected';
-            console.log(body);
             return Promise.reject(new Error(msg));
         } catch (err) {
             expect(err).to.have.property('status', 400);
         }
     });
 
-    describe('loopback-search-component configuration', function(){
+    describe('loopback-search-component configuration', () => {
         // this test is for documentation
-        it('preserveColumnCase: Can be set in the component configuration. Most tests in this suite' +
-            'only work because it is set to false (defaults to true) since Loopback`s automigrate' +
-            'converts all column names to lowercase', function(){});
+        it('preserveColumnCase: Can be set in the component configuration. Most tests in this ' +
+            'suite only work because it is set to false (defaults to true) since Loopback`s ' +
+            'automigrate converts all column names to lowercase', () => {});
 
-        it('preserveColumnCase: Can be set in the "searchConfig" section of a model config to override' +
-            'the global setting.', async function(){
+        it('preserveColumnCase: Can be set in the "searchConfig" section of a model definition' +
+            '(or the model-config.json) to override the global setting.', async function() {
             const query = {
                 where: {
                     bookId: 1,
@@ -534,15 +536,17 @@ describe('The loopback-search-component', () => {
                     .set('accept', 'application/json')
                     .query({ filter: JSON.stringify(query) })
                     .then(result => result.body);
-            } catch(error) {
-                return;
+                const msg = 'Querying a camel cased property on an autogenerated model without ' +
+                    'setting the preserveColumnCase option to false should fail';
+                return Promise.reject(new Error(msg));
+            } catch (error) {
+                // all good
             }
-            throw new Error('Querying a camel cased property on an autogenerated model without setting' +
-                'the preserveColumnCase option to false should fail');
         });
 
-        it('preserveColumnCase: Can be set in the "searchConfig" section of a model config to override' +
-            'the global setting (check the error by invoking the internal method).', async function(){
+        it('preserveColumnCase: Can be set in the "searchConfig" section of a model config to ' +
+            'override the global setting (check the error by invoking the internal method).',
+            async function() {
             const query = {
                 where: {
                     bookId: 1,
@@ -551,12 +555,12 @@ describe('The loopback-search-component', () => {
 
             try {
                 await this.Page.find(query);
-            } catch(err){
+                const msg = 'Querying a camel cased property on an autogenerated model without ' +
+                    'setting the preserveColumnCase option to false should fail';
+                return Promise.reject(new Error(msg));
+            } catch (err) {
                 expect(err.message).to.contain('page.bookId');
-                return;
             }
-            throw new Error('Querying a camel cased property on an autogenerated model without setting' +
-                'the preserveColumnCase option to false should fail');
         });
     });
 });
