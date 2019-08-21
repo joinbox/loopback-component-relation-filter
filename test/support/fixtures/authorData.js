@@ -1,4 +1,4 @@
-module.exports = function(){
+module.exports = function() {
     return [
         {
             firstName: 'Scott',
@@ -15,6 +15,6 @@ module.exports = function(){
         {
             firstName: 'George',
             lastName: 'Orwell',
-        }
-    ]
-}
+        },
+    ];
+};

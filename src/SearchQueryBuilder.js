@@ -4,15 +4,11 @@ const ModelWrapper = require('./ModelWrapper');
 const TableAliasProvider = require('./TableAliasProvider');
 const SearchQueryNormalizer = require('./SearchQueryNormalizer');
 
-const { UnknownOperatorError }= require('./error');
+const { UnknownOperatorError } = require('./error');
 
 /**
- * @todo: remove the state by instantiating a new table alias provider
- * @todo: remove all methods that should not belong to the interface (i.e. only preserve buildQuery or build)
- *
  * @type {module.SearchQueryBuilder}
  */
-
 module.exports = class SearchQueryBuilder {
 
     constructor(models, { rejectUnknownProperties = false, preserveColumnCase = true } = {}) {
@@ -151,6 +147,7 @@ module.exports = class SearchQueryBuilder {
             aliases.modelThrough = ModelWrapper.fromModel(throughModel, throughAlias);
         }
 
+        // eslint-disable-next-line no-param-reassign
         seenRelations[relationName] = aliases;
 
         return aliases;
@@ -178,7 +175,7 @@ module.exports = class SearchQueryBuilder {
             // relations object.
             if (rootModel.isRelation(propertyName) && !relations[propertyName]) {
                 // alias the model we are going to join
-                const aliases  = this._trackAliases(
+                const aliases = this._trackAliases(
                     rootModel,
                     propertyName,
                     aliasProvider,
@@ -203,7 +200,9 @@ module.exports = class SearchQueryBuilder {
         }, joins.slice(0));
     }
 
-    _joinMapping({keyFrom, modelTo, modelThrough, relation, table}, opts){
+    _joinMapping({
+        keyFrom, modelTo, modelThrough, relation, table,
+    }, opts) {
         // get the id of the target model
         const [targetModelId] = modelTo.getIdProperties({
             ignoreAlias: true,
@@ -229,7 +228,9 @@ module.exports = class SearchQueryBuilder {
         ];
     }
 
-    _joinReference({keyFrom, modelTo, relation, table}, opts){
+    _joinReference({
+        keyFrom, modelTo, relation, table,
+    }, opts) {
         const keyTo = modelTo.getColumnName(relation.keyTo, opts);
         return {
             table,
@@ -252,7 +253,7 @@ module.exports = class SearchQueryBuilder {
      */
     applyPropertyFilter({ property, value }, builder) {
 
-        if (!value) return;
+        if (!value) return null;
         const operatorMap = {
             neq: '!=',
             gt: '>',
@@ -265,37 +266,37 @@ module.exports = class SearchQueryBuilder {
             nilike: 'not ilike',
 
         };
-        const operator = this.supportedOperators.find(op => {
-            return Object.prototype.hasOwnProperty.call(value, op);
-        });
+        const operator = this.supportedOperators.find(op =>
+            Object.prototype.hasOwnProperty.call(value, op));
         // The default case should never be used due to the normalization.
         if (operator) {
             const content = value[operator];
             switch (operator) {
-            case '=':
-                return builder.where(property, content);
-            case 'neq':
-            case 'gt':
-            case 'lt':
-            case 'gte':
-            case 'lte':
-            case 'like':
-            case 'ilike':
-            case 'nlike':
-            case 'nilike': {
-                const mappedOperator = operatorMap[operator];
-                return builder.where(property, mappedOperator, content);
-            }
-            case 'between':
-                return builder.whereBetween(property, content);
-            case 'inq':
-                return builder.whereIn(property, content);
-            case 'nin':
-                return builder.whereNotIn(property, content);
-            default:
-                const valueString = JSON.stringify(value);
-                const msg = `Unknown operator encountered when comparing ${property} to ${valueString}`;
-                throw new UnknownOperatorError(msg);
+                case '=':
+                    return builder.where(property, content);
+                case 'neq':
+                case 'gt':
+                case 'lt':
+                case 'gte':
+                case 'lte':
+                case 'like':
+                case 'ilike':
+                case 'nlike':
+                case 'nilike': {
+                    const mappedOperator = operatorMap[operator];
+                    return builder.where(property, mappedOperator, content);
+                }
+                case 'between':
+                    return builder.whereBetween(property, content);
+                case 'inq':
+                    return builder.whereIn(property, content);
+                case 'nin':
+                    return builder.whereNotIn(property, content);
+                default: {
+                    const valueString = JSON.stringify(value);
+                    const msg = `Unknown operator encountered when comparing ${property} to ${valueString}`;
+                    throw new UnknownOperatorError(msg);
+                }
             }
         }
         return builder;

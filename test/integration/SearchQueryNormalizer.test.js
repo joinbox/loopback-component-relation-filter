@@ -1,5 +1,9 @@
 const { expect } = require('chai');
 
+const {
+    before, beforeEach, describe, it,
+} = require('mocha');
+
 const SearchQueryNormalizer = require('../../src/SearchQueryNormalizer');
 const { UnknownPropertyError } = require('../../src/error');
 
@@ -131,7 +135,7 @@ describe('The Search Query Normalizer', () => {
                                         },
                                     ],
                                 },
-                            }
+                            },
                         ],
                     },
                 },

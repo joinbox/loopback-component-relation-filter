@@ -1,4 +1,4 @@
-module.exports = function(){
+module.exports = function() {
     return [
         {
             title: 'The great gatsby',
@@ -16,4 +16,4 @@ module.exports = function(){
             title: 'Animal Farm',
         },
     ];
-}
+};
