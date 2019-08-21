@@ -44,7 +44,7 @@ module.exports = class TableAliasProvider {
      *
      * @return {TableAliasProvider}
      */
-    spawnProvider(){
+    spawnProvider() {
         const aliases = Object.assign({}, this.aliases);
         return new TableAliasProvider(aliases, this.separator);
     }

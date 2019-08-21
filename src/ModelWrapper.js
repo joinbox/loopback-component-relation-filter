@@ -83,11 +83,10 @@ module.exports = class ModelWrapper {
         } else {
             const reverseRelation = Object
                 .values(this.getModelRelations())
-                .find((rel) => {
+                .find(rel =>
                     // check if it is the same through model and if it references the correct entity
-                    return rel.modelThrough.modelName === relation.modelThrough.modelName
-                        && rel.modelTo.modelName === relation.modelFrom.modelName;
-                });
+                    rel.modelThrough.modelName === relation.modelThrough.modelName
+                        && rel.modelTo.modelName === relation.modelFrom.modelName);
             // if there is no reverse relation, the relation to this model is unidirectional
             // and we are not able to determine the referenced field
             if (reverseRelation) {
@@ -128,7 +127,7 @@ module.exports = class ModelWrapper {
         return Object.prototype.hasOwnProperty.call(this.getModelRelations(), propertyName);
     }
 
-    getQueriedProperties(query = {}, options={}) {
+    getQueriedProperties(query = {}, options = {}) {
         return Object
             .keys(query)
             .filter(propertyName => this.isProperty(propertyName))

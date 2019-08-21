@@ -1,0 +1,12 @@
+version: '2'
+services:
+  microservice_tests_postgres:
+    image: postgres:latest
+    container_name: 'microservice_tests_postgres'
+    environment:
+      - POSTGRES_PASSWORD=microservice_test_pwd
+      - POSTGRES_USER=microservice_test
+    restart: always
+    command: postgres
+    ports:
+      - "8765:5432"

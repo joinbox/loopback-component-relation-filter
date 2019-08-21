@@ -4,40 +4,38 @@ const authorData = require('./authorData');
 
 class BookDataCreator {
 
-    constructor(models){
+    constructor(models) {
         this.Book = models.Book;
         this.Publisher = models.Publisher;
         this.Page = models.Page;
         this.Author = models.Author;
     }
 
-    async createAndLinkBookData(){
+    async createAndLinkBookData() {
         const books = await this.createBooks(bookData());
         const authors = await this.createAuthors(authorData());
         const publishers = await this.createPublishers(publisherData());
 
-        return this.linkData({books, authors, publishers});
+        return this.linkData({ books, authors, publishers });
     }
 
-    async createBooks(data){
+    async createBooks(data) {
         return this.createModels(this.Book, data);
     }
 
-    async createAuthors(data){
+    async createAuthors(data) {
         return this.createModels(this.Author, data);
     }
 
-    async createPublishers(data){
+    async createPublishers(data) {
         return this.createModels(this.Publisher, data);
     }
 
-    async createModels(model, data){
-        return Promise.all(data.map((entry) => {
-            return model.create(entry);
-        }));
+    async createModels(model, data) {
+        return Promise.all(data.map(entry => model.create(entry)));
     }
 
-    async linkData({books, authors, publishers}){
+    async linkData({ books, authors, publishers }) {
         const authorMap = this.mapEntities(authors, 'lastName');
         const publisherMap = this.mapEntities(publishers, 'name');
         const bookMap = this.mapEntities(books, 'title');
@@ -48,8 +46,8 @@ class BookDataCreator {
         ]);
     }
 
-    async _linkAuthorData(bookMap, authorMap){
-        const orwell = authorMap['Orwell'];
+    async _linkAuthorData(bookMap, authorMap) {
+        const orwell = authorMap.Orwell;
 
         orwell.books.add(bookMap['1984']);
         orwell.books.add(bookMap['Animal Farm']);
@@ -63,16 +61,16 @@ class BookDataCreator {
         ]);
     }
 
-    async _linkPublisherData(bookMap, publisherMap){
+    async _linkPublisherData(bookMap, publisherMap) {
         const orwell1984 = bookMap['1984'];
         const animalFarm = bookMap['Animal Farm'];
 
         const theGreatGatsby = bookMap['The great gatsby'];
 
         orwell1984.publisher(publisherMap['Secker and Warburg']);
-        animalFarm.publisher(publisherMap['NAL']);
+        animalFarm.publisher(publisherMap.NAL);
 
-        theGreatGatsby.publisher(publisherMap['Scribner']);
+        theGreatGatsby.publisher(publisherMap.Scribner);
 
         return Promise.all([
             orwell1984.save(),
@@ -81,15 +79,16 @@ class BookDataCreator {
         ]);
     }
 
-    mapEntities(entities, property){
+    mapEntities(entities, property) {
         return entities.reduce((map, entity) => {
+            // eslint-disable-next-line no-param-reassign
             map[entity[property]] = entity;
             return map;
         }, {});
     }
 }
 
-module.exports = function(models){
+module.exports = function(models) {
     const creator = new BookDataCreator(models);
     return creator.createAndLinkBookData();
-}
+};

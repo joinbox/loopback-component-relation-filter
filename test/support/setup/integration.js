@@ -1,16 +1,18 @@
+const { before } = require('mocha');
+
 require('./unit');
 
 function migrateDatasource(datasource) {
     return new Promise((resolve, reject) => {
         datasource.automigrate((err) => {
             if (err) return reject(err);
-            resolve();
+            return resolve();
         });
     });
 }
 
 before('clean up database and migrate models', function() {
-    const datasources = this.service.app.datasources;
+    const { datasources } = this.service.app;
     const sources = new Set();
 
     const pendingMigrations = Object
