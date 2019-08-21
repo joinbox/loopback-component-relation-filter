@@ -92,4 +92,4 @@ class BookDataCreator {
 module.exports = function(models){
     const creator = new BookDataCreator(models);
     return creator.createAndLinkBookData();
-}
+};
