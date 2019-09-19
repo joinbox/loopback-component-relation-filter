@@ -11,7 +11,13 @@
         ]
     },
     "Book": {
-        "dataSource": "db"
+        "dataSource": "db",
+        "options": {
+            "relationFilter": {
+                "enabled": true,
+                "rejectUnknownProperties": false
+            }
+        }
     },
     "Page": {
         "dataSource": "db"
