@@ -1,6 +1,6 @@
 {
   "name": "@joinbox/loopback-component-relation-filter",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Enables where query filters over related models via loopback api.",
   "main": "index.js",
   "directories": {
@@ -39,12 +39,12 @@
     "@joinbox/eslint-config-joinbox": "^1.0.8",
     "chai": "^4.1.2",
     "eslint": "^5.16.0",
-    "loopback-connector-postgresql": "^3.7.0",
+    "loopback-connector-postgresql": "^3.8.0",
     "mocha": "^4.0.1",
     "strong-error-handler": "^2.3.0"
   },
   "dependencies": {
     "@joinbox/loopback-microservice": "^1.2.1",
-    "knex": "^0.19.2"
+    "knex": "^0.19.4"
   }
 }
