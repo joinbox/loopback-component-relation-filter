@@ -274,7 +274,13 @@ module.exports = class SearchQueryBuilder {
             switch (operator) {
                 case '=':
                     return builder.where(property, content);
-                case 'neq':
+                case 'neq': {
+                    if (content === null) {
+                        return builder.whereNotNull(property);
+                    }
+                    const mappedOperator = operatorMap[operator];
+                    return builder.where(property, mappedOperator, content);
+                }
                 case 'gt':
                 case 'lt':
                 case 'gte':

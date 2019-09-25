@@ -144,7 +144,7 @@ describe('The SearchQueryBuilder', function() {
                     where (("book_authors"."firstname" like 'Michael'
                             and "book_authors"."lastname" like 'R%')
                         and ("book_pages"."number" > 2
-                            and "book_pages"."number" != NULL))
+                            and "book_pages"."number" is not null))
                     group by "book"."id"`,
         },
         {
@@ -265,6 +265,11 @@ describe('The SearchQueryBuilder', function() {
                 message: 'neq',
                 where: { id: { neq: 1 } },
                 result: createResult('!='),
+            },
+            {
+                message: 'neq (null)',
+                where: { id: { neq: null }},
+                result: createResult('is not', 'null'),
             },
             {
                 message: 'lt',
