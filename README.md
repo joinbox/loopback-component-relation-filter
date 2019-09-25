@@ -2,10 +2,10 @@
 
 Enables where query filters on related Loopback (3) models attached to a postgres data source.
 
-> Since Loopback3 is will reach its
-> [EOL in December 2020](https://loopback.io/doc/en/contrib/Long-term-support.html) we will likely
-> stop updating this package. Fixing its current limitations would require us to do a significant
-> rewrite.
+>  **The component currently has a bug when doing or queries.** Since Loopback3 is will reach its
+>  [EOL in December 2020](https://loopback.io/doc/en/contrib/Long-term-support.html) we will likely
+>  stop updating this package. Fixing its current limitations would require us to do a significant
+>  rewrite.
 
 ## Purpose
 
